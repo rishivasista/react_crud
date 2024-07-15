@@ -1,14 +1,13 @@
+
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
-const bcrypt = require("bcryptjs"); // For hashing passwords
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-// MySQL database connection
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -25,45 +24,8 @@ db.connect(err => {
     }
 });
 
-// Middleware for authentication
-const authenticateUser = (req, res, next) => {
-    const { email, password } = req.headers; // Assuming email and password are sent in headers
-
-    if (!email || !password) {
-        return res.status(401).json({ error: 'Authentication failed: Missing credentials' });
-    }
-
-    const sql = "SELECT * FROM users WHERE email = ?";
-    db.query(sql, [email], (err, results) => {
-        if (err) {
-            console.error('Error executing query:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-
-        if (results.length === 0) {
-            return res.status(401).json({ error: 'Authentication failed: User not found' });
-        }
-
-        const user = results[0];
-
-        bcrypt.compare(password, user.password, (bcryptErr, bcryptResult) => {
-            if (bcryptErr || !bcryptResult) {
-                return res.status(401).json({ error: 'Authentication failed: Invalid credentials' });
-            }
-
-            // Attach user information to the request object for later use if needed
-            req.user = {
-                id: user.id,
-                email: user.email,
-            };
-
-            next(); // Proceed to the next middleware or route handler
-        });
-    });
-};
-
-// Example endpoint requiring authentication
-app.get("/students", authenticateUser, (req, res) => {
+// GET all students
+app.get("/", (req, res) => {
     const sql = "SELECT * FROM student";
     db.query(sql, (err, data) => {
         if (err) {
@@ -74,8 +36,8 @@ app.get("/students", authenticateUser, (req, res) => {
     });
 });
 
-// Example endpoint for creating a student (requires authentication)
-app.post("/students/create", authenticateUser, (req, res) => {
+// POST create a student
+app.post("/create", (req, res) => {
     const sql = "INSERT INTO student (Firstname, Lastname, Email) VALUES (?, ?, ?)";
     const values = [
         req.body.firstname,
@@ -91,8 +53,46 @@ app.post("/students/create", authenticateUser, (req, res) => {
     });
 });
 
-// Example endpoint for deleting a student (requires authentication)
-app.delete("/students/delete/:id", authenticateUser, (req, res) => {
+// PUT update a student
+app.put("/update/:id", (req, res) => {
+    const id = req.params.id;
+    const firstname = req.body.firstname;
+    const lastname = req.body.lastname;
+    const email = req.body.email;
+
+    // Construct the SQL query based on provided fields
+    let sql = "UPDATE student SET";
+    const values = [];
+    const placeholders = [];
+
+    if (firstname) {
+        placeholders.push(" Firstname = ?");
+        values.push(firstname);
+    }
+    if (lastname) {
+        placeholders.push(" Lastname = ?");
+        values.push(lastname);
+    }
+    if (email) {
+        placeholders.push(" Email = ?");
+        values.push(email);
+    }
+
+    // Add ID condition to the query
+    sql += placeholders.join(",") + " WHERE ID = ?";
+    values.push(id);
+
+    db.query(sql, values, (err, data) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        return res.json({ message: 'Student updated successfully' });
+    });
+});
+
+// DELETE a student
+app.delete("/delete/:id", (req, res) => {
     const id = req.params.id;
     const sql = "DELETE FROM student WHERE ID = ?";
     db.query(sql, [id], (err, data) => {
