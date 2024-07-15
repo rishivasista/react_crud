@@ -5,13 +5,17 @@ import DeleteStudent from './DeleteStudent'; // Import DeleteStudent component
 
 const Student = () => {
   const [students, setStudents] = useState([]);
-
+  const token = localStorage.getItem('token');
   useEffect(() => {
     fetchStudents();
   }, []);
 
   const fetchStudents = () => {
-    axios.get('http://localhost:3001/')
+    axios.get('http://localhost:3001/', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+    })
       .then(res => {
         setStudents(res.data);
       })

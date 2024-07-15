@@ -6,11 +6,16 @@ function CreateStudent() {
     const [firstname, setFName] = useState('');
     const [lastname, setLName] = useState('');
     const [email, setEmail] = useState('');
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
     function handleSubmit(event) {
         event.preventDefault();
-        axios.post('http://localhost:3001/create', { firstname, lastname, email })
+        axios.post('http://localhost:3001/create', { firstname, lastname, email }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(res => {
                 console.log(res);
                 navigate('/');

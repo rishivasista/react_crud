@@ -7,11 +7,15 @@ function UpdateStudent() {
     const [lastname, setLName] = useState('');
     const [email, setEmail] = useState('');
     const { id } = useParams();
-
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/student/${id}`)
+        axios.get(`http://localhost:3001/student/${id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(res => {
                 const student = res.data;
                 setFName(student.firstname);
@@ -19,11 +23,15 @@ function UpdateStudent() {
                 setEmail(student.email);
             })
             .catch(err => console.log(err));
-    }, [id]);
+    }, [id, token]);
 
     function handleSubmit(event) {
         event.preventDefault();
-        axios.put(`http://localhost:3001/update/${id}`, { firstname, lastname, email })
+        axios.put(`http://localhost:3001/update/${id}`, { firstname, lastname, email }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(res => {
                 console.log(res);
                 navigate('/');
